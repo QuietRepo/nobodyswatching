@@ -892,7 +892,10 @@
             border-radius: 14px;
             background: var(--bg-secondary);
             padding: 1.75rem 1.6rem;
-            margin-bottom: 2.5rem;
+            /* Matches .danger-zone's own margin-top, so the three blocks after
+               the form (actions, share kit, danger zone) keep one rhythm.
+               .form-actions has no bottom margin of its own. */
+            margin: 2.5rem 0 0;
         }
         .share-block .form-section-title { margin-bottom: 0.4rem; }
         .share-title-gold { color: var(--gold); }
