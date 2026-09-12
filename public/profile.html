@@ -27,6 +27,7 @@
             --youtube: #ff0000;
             --kick: #53fc18;
             --success: #22c55e;
+            --gold: #fbbf24;
             --error: #ef4444;
             --font-display: 'Outfit', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
@@ -885,6 +886,73 @@
             }
         }
 
+        /* ========== SHARE KIT ========== */
+        .share-block {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--bg-secondary);
+            padding: 1.75rem 1.6rem;
+            margin-bottom: 2.5rem;
+        }
+        .share-block .form-section-title { margin-bottom: 0.4rem; }
+        .share-title-gold { color: var(--gold); }
+        .share-title-muted { color: var(--text-muted); }
+        .share-intro { font-size: 0.88rem; color: var(--text-secondary); margin: 0 0 1.5rem; }
+
+        .share-row { display: flex; gap: 0.6rem; align-items: stretch; }
+        .share-row .form-input { flex: 1 1 auto; min-width: 0; }
+        .share-mono { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-bright); }
+        .share-blurb { resize: vertical; min-height: 82px; font-size: 0.85rem; line-height: 1.55; }
+
+        .share-btn { padding: 0.7rem 1.1rem; font-size: 0.82rem; white-space: nowrap; }
+        .share-btn.copied { border-color: var(--accent-bright); color: var(--accent-bright); }
+        .share-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .share-divider { height: 1px; background: var(--border); margin: 1.6rem 0; }
+
+        .share-panel-row { display: flex; gap: 1.1rem; align-items: flex-start; flex-wrap: wrap; }
+        .share-panel-shot {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            line-height: 0;
+            flex: 0 0 auto;
+            background: var(--bg-card);
+        }
+        /* Displayed at 320, which is Twitch's panel width. The file itself is
+           larger so it stays crisp on high-DPI screens. */
+        .share-panel-shot img { display: block; width: 320px; height: auto; max-width: 100%; }
+        .share-panel-actions { display: flex; flex-direction: column; gap: 0.55rem; flex: 1 1 200px; min-width: 180px; }
+
+        .share-check { list-style: none; padding: 0; margin: 0 0 1.1rem; display: grid; gap: 0.6rem; }
+        .share-check li { display: flex; gap: 0.7rem; align-items: baseline; font-size: 0.88rem; color: var(--text-secondary); }
+        /* nowrap matters: the empty marker is "[ ]" and the space inside it
+           is a wrap opportunity, so without this the brackets split onto two
+           lines while the ticked "[x]" looks fine. */
+        .share-check .mark { font-family: var(--font-mono); font-size: 0.8rem; flex: 0 0 auto; width: 1.7rem; white-space: nowrap; color: var(--gold); }
+        .share-check b { color: var(--text-primary); font-weight: 600; }
+        .share-check li.done { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--border); }
+        .share-check li.done .mark { color: var(--success); }
+        .share-check li.done b { color: inherit; font-weight: 500; }
+
+        .save-nudge {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1.2rem;
+        }
+        .save-nudge .ico { font-family: var(--font-mono); color: var(--gold); font-size: 0.8rem; }
+        .save-nudge p { margin: 0; font-size: 0.84rem; color: var(--text-secondary); }
+
+        @media (max-width: 640px) {
+            .share-row { flex-direction: column; }
+            .share-btn { width: 100%; justify-content: center; }
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1165,7 +1233,7 @@
 
         <!-- Preferred Platform -->
         <div class="form-section">
-            <div class="form-section-title">// 03 — When You're Multi-Streaming</div>
+            <div class="form-section-title">// 04 — When You're Multi-Streaming</div>
             <div class="form-group">
                 <label class="form-label" for="preferred-platform">Preferred Platform</label>
                 <select class="form-select" id="preferred-platform">
@@ -1190,6 +1258,71 @@
         <div class="form-actions">
             <button class="btn-primary" id="save-btn" onclick="saveProfile()">💾 Save Profile</button>
             <a href="/" class="btn-secondary">← Back to Home</a>
+        </div>
+
+        <!-- Share Kit -->
+        <div class="share-block" id="share-block" style="display: none;">
+
+            <!-- Not enough on the profile to be worth sharing yet -->
+            <div id="share-locked">
+                <div class="form-section-title share-title-muted">// almost</div>
+                <p class="share-intro">You're listed and people can find you. There's just not much here yet, and a link to a blank profile is a wasted link.</p>
+                <ul class="share-check">
+                    <li id="chk-bio"><span class="mark">[ ]</span><span><b>Write a bio.</b> A sentence is plenty. It's the first thing anyone reads.</span></li>
+                    <li id="chk-platform"><span class="mark">[ ]</span><span><b>Add at least one platform link.</b> Without one there's nowhere for anyone to actually go.</span></li>
+                </ul>
+                <div class="save-nudge" id="share-save-to-unlock" style="display: none;">
+                    <span class="ico">[!]</span>
+                    <p>That's everything. Hit Save and this unlocks.</p>
+                </div>
+                <div class="form-hint">*None of this affects whether you're listed. You already are. It's only about not sending people somewhere empty.</div>
+            </div>
+
+            <!-- Unlocked -->
+            <div id="share-ready" style="display: none;">
+                <div class="form-section-title share-title-gold">// now go and tell someone</div>
+                <p class="share-intro">You're listed, and there's something worth looking at. That does nothing on its own unless people can find it, so here's everything you need to point them here.</p>
+
+                <div class="save-nudge" id="share-dirty-nudge" style="display: none;">
+                    <span class="ico">[!]</span>
+                    <p>You've changed your display name but not saved it, and your link is built from that name. Save first and the new link will appear here.</p>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="share-url">Your profile link</label>
+                    <div class="share-row">
+                        <input type="text" class="form-input share-mono" id="share-url" readonly>
+                        <button type="button" class="btn-secondary share-btn" id="share-url-copy" onclick="copyShareField('share-url', this)">Copy</button>
+                    </div>
+                    <div class="form-hint">*Paste it anywhere. It unfurls with your avatar, or your stream thumbnail when you're live.</div>
+                </div>
+
+                <div class="share-divider"></div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Twitch panel</label>
+                    <div class="share-panel-row">
+                        <div class="share-panel-shot">
+                            <img src="/twitch-panel.png" alt="NobodysWatching.live panel graphic for your Twitch channel">
+                        </div>
+                        <div class="share-panel-actions">
+                            <a class="btn-secondary share-btn" href="/twitch-panel.png" download="nobodyswatching-panel.png">&darr; Download PNG</a>
+                            <div class="form-hint" style="margin-top: 0.2rem;">*On Twitch: About, Edit Panels, add a panel, upload this image, and paste your profile link into the link field. Takes a minute and then it sits there permanently.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="share-divider"></div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="share-blurb">Something to say, if you can't face writing one</label>
+                    <div class="share-row">
+                        <textarea class="form-input share-blurb" id="share-blurb" readonly>I'm listed on NobodysWatching.live, a directory for small streamers. No algorithm, no follower counts, everyone shown the same. Go and find someone new.</textarea>
+                        <button type="button" class="btn-secondary share-btn" onclick="copyShareField('share-blurb', this)">Copy</button>
+                    </div>
+                    <div class="form-hint">*Yours will be better. Write your own.</div>
+                </div>
+            </div>
         </div>
 
         <!-- Danger Zone -->
@@ -1328,6 +1461,7 @@
             document.getElementById('loading-state').style.display = 'none';
             document.getElementById('profile-form').style.display = 'block';
 
+            renderShareBlock();
             loadAchievements();
         }
 
@@ -1610,6 +1744,126 @@
         });
 
         // =============================================
+        // SHARE KIT
+        //
+        // Everything below reads the SAVED profile, never the live form.
+        // The profile URL contains the display name, so if this tracked
+        // the form it would hand someone a link built from a name they
+        // hadn't saved yet - and they'd paste a 404 into a public channel
+        // with their own name on it. Form state is only ever used to tick
+        // the checklist and decide whether to nag about saving.
+        // =============================================
+        const SHARE_PLATFORM_FIELDS = ['twitch_url', 'youtube_url', 'kick_url', 'rumble_url', 'tiktok_url', 'velora_url'];
+        const SHARE_PLATFORM_INPUTS = ['twitch-url', 'youtube-url', 'kick-url', 'rumble-url', 'tiktok-url', 'velora-url'];
+        let shareListenersBound = false;
+
+        function shareFieldFilled(id) {
+            const el = document.getElementById(id);
+            return !!(el && el.value && el.value.trim());
+        }
+
+        function setShareCheck(id, done) {
+            const li = document.getElementById(id);
+            if (!li) return;
+            li.classList.toggle('done', done);
+            const mark = li.querySelector('.mark');
+            if (mark) mark.textContent = done ? '[x]' : '[ ]';
+        }
+
+        function bindShareListeners() {
+            if (shareListenersBound) return;
+            shareListenersBound = true;
+            ['display-username', 'bio'].concat(SHARE_PLATFORM_INPUTS).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', renderShareBlock);
+            });
+        }
+
+        function renderShareBlock() {
+            const block = document.getElementById('share-block');
+            if (!block || !currentProfile) return;
+            bindShareListeners();
+            block.style.display = 'block';
+
+            // Saved state decides whether this is unlocked at all.
+            const savedBio = !!(currentProfile.bio && String(currentProfile.bio).trim());
+            const savedPlatform = SHARE_PLATFORM_FIELDS.some(
+                k => currentProfile[k] && String(currentProfile[k]).trim()
+            );
+
+            const locked = document.getElementById('share-locked');
+            const ready = document.getElementById('share-ready');
+
+            if (!savedBio || !savedPlatform) {
+                // Tick against the FORM so it responds as they type, rather
+                // than looking broken until they save.
+                const formBio = shareFieldFilled('bio');
+                const formPlatform = SHARE_PLATFORM_INPUTS.some(shareFieldFilled);
+                setShareCheck('chk-bio', formBio);
+                setShareCheck('chk-platform', formPlatform);
+                document.getElementById('share-save-to-unlock').style.display =
+                    (formBio && formPlatform) ? 'flex' : 'none';
+                locked.style.display = 'block';
+                ready.style.display = 'none';
+                return;
+            }
+
+            locked.style.display = 'none';
+            ready.style.display = 'block';
+
+            const savedName = String(currentProfile.username || '').trim();
+            const urlField = document.getElementById('share-url');
+            urlField.value = 'https://nobodyswatching.live/streamer.html?user=' + encodeURIComponent(savedName);
+
+            const nameEl = document.getElementById('display-username');
+            const formName = nameEl ? nameEl.value.trim() : '';
+            const nameIsStale = !!formName && formName !== savedName;
+
+            document.getElementById('share-dirty-nudge').style.display = nameIsStale ? 'flex' : 'none';
+            document.getElementById('share-url-copy').disabled = nameIsStale;
+            urlField.classList.toggle('share-stale', nameIsStale);
+        }
+
+        function copyShareField(id, btn) {
+            if (btn && btn.disabled) return;
+            const el = document.getElementById(id);
+            if (!el) return;
+            const text = el.value || '';
+            const done = () => {
+                if (!btn) return;
+                const was = btn.textContent;
+                btn.textContent = 'Copied';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = was;
+                    btn.classList.remove('copied');
+                }, 1400);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done, () => shareLegacyCopy(text, done));
+            } else {
+                shareLegacyCopy(text, done);
+            }
+        }
+
+        function shareLegacyCopy(text, done) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.top = '-1000px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                done();
+            } catch (err) {
+                showToast('Could not copy that. Select it and copy manually.', 'error');
+            }
+        }
+
+        // =============================================
         // SAVE PROFILE
         // =============================================
         async function saveProfile() {
@@ -1683,6 +1937,7 @@
             } else {
                 showToast('Profile saved. Looking good.', 'success');
                 currentProfile = { ...currentProfile, ...updates };
+                renderShareBlock();
                 maybeShowDiscordNudge();
 
                 // Check the three achievements that depend on saved profile
