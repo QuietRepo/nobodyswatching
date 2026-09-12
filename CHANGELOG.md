@@ -6,8 +6,10 @@ All notable changes to NobodysWatching.live are documented here.
 [2026-09-12] - SHARE CARDS (OPEN GRAPH)
 
 ### Fixed
-Every shared profile link has been unfurling as a blank grey box titled "Streamer Profile" since launch. streamer.html had no Open Graph tags at all, so Discord, Bluesky, X and everything else had nothing to show. Several hundred streamers have been advertising the site with an advert that renders as nothing
+- Every shared profile link has been unfurling as a blank grey box titled "Streamer Profile" since launch. streamer.html had no Open Graph tags at all, so Discord, Bluesky, X and everything else had nothing to show. Several hundred streamers have been advertising the site with an advert that renders as nothing
 index.html had OG tags but no og:image, and its Twitter card was set to summary rather than summary_large_image, so the homepage link had no picture either
+
+- The share block sat flush against the Save and Back to Home buttons. .form-actions has a top border and padding but no bottom margin, so the new block needed its own margin-top. Now matches .danger-zone at 2.5rem so the three blocks below the form line up
 
 ### Added
 og-card.png, a proper 1200x630 share card in the site palette
