@@ -3,6 +3,21 @@
 All notable changes to NobodysWatching.live are documented here.
 
 ---
+[2026-09-12] - SHARE CARDS (OPEN GRAPH)
+
+### Fixed
+Every shared profile link has been unfurling as a blank grey box titled "Streamer Profile" since launch. streamer.html had no Open Graph tags at all, so Discord, Bluesky, X and everything else had nothing to show. Several hundred streamers have been advertising the site with an advert that renders as nothing
+index.html had OG tags but no og:image, and its Twitter card was set to summary rather than summary_large_image, so the homepage link had no picture either
+
+### Added
+og-card.png, a proper 1200x630 share card in the site palette
+netlify/edge-functions/profile-meta.js, which rewrites the head of /streamer.html per profile. Checks the user agent first and returns immediately for real people, so only crawlers and link unfurlers trigger the Supabase lookup. Mirrors streamer.html's own query exactly, ilike on username plus is_visible, so hidden profiles get no card
+Static fallback OG tags on streamer.html for when the edge function does not run. Branded rather than personal, but never blank again
+
+### Changed
+Someone who is live gets their stream thumbnail as the share image instead of their avatar, so sharing a live profile shows what they are actually playing. Offline profiles use their avatar as a square card, no avatar falls back to the site card
+
+---
 [2026-09-04] - KICK LIVE DETECTION RESTORED
 
 ### Fixed
