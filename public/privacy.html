@@ -374,19 +374,27 @@
                 beyond the date, no order, no way to reconstruct anyone's path through the site.
             </p>
             <p>
-                We use this two ways. First, honestly, to find out whether this site does 
+                We use this a few ways. First, honestly, to find out whether this site does 
                 anything at all — "the directory sent 40 people to streamers' channels last 
                 month" is a real claim we couldn't make before. Second, once a streamer's 
                 links have been clicked a handful of times, they'll quietly earn a private 
-                achievement for it. No number is ever shown to them or anyone else — same 
-                rule as every other achievement on the site.
+                achievement for it — same rule as every other achievement on the site, never 
+                shown to anyone but them.
+            </p>
+            <p>
+                Third — and this is the one actual number that gets shown to anyone — a 
+                streamer can privately see last month's click total on their own profile 
+                page. At most once a month, and only if the total isn't zero; a zero month 
+                just stays quiet rather than showing up as a number. Nobody but that streamer 
+                ever sees it, it's never a running total you can check whenever you like, and 
+                it's never shown to their audience or anyone else browsing the site.
             </p>
             <p>
                 Daily detail gets collapsed into monthly totals after six months. Nothing is 
                 ever deleted outright, just made coarser over time — which also means the 
                 data gets less specific the older it gets, not more.
             </p>
-            <p class="disclaimer">*We know "anonymous but we still count it" is the kind of line every tracking company says. The difference: nothing about the table lets it be traced to you even if someone tried — there's simply no visitor data in it to trace. The site and its public API can't read this table at all, full stop. Like everything else here, whoever runs the database can technically go looking at the raw numbers — same as any site owner can query their own database. There's just nothing about you in there to find.</p>
+            <p class="disclaimer">*We know "anonymous but we still count it" is the kind of line every tracking company says. The difference: nothing about the table lets it be traced to you even if someone tried — there's simply no visitor data in it to trace. The site's public API can't read this table at all, full stop — the achievement and the monthly digest above are the two narrow exceptions, each built to return only what its caller is entitled to see, nothing more. Like everything else here, whoever runs the database can technically go looking at the raw numbers — same as any site owner can query their own database. There's just nothing about you in there to find.</p>
         </div>
 
         <div class="content-block">

@@ -3,6 +3,23 @@
 All notable changes to NobodysWatching.live are documented here.
 
 ---
+[2026-09-14] - MONTHLY CLICK DIGEST
+
+### Added
+- A private "last month" card on a streamer's own profile page — a one-off total of how many times their links got clicked, shown at most once a calendar month
+- Straight out of Discord feedback on the click-counting change: a few people asked whether streamers could see their own numbers privately, since the whole thing started from a poll nobody could actually answer. Fair ask, and a narrower one than what we'd deliberately ruled out (no public numbers, no leaderboard), so here it is
+- `get-click-digest.mjs` — authenticated endpoint, same verify-then-act pattern as the achievement endpoint. Returns only the caller's own previous-month total, nothing else, ever
+- `get_previous_month_clicks()` — new SQL function alongside the other three, sums a profile's clicks for the prior complete calendar month only
+- `last_click_digest_month` column on `profiles`, tracking which month's digest a streamer's already seen — same idea as the one-time Discord nudge flag, but recurring
+
+### Notes
+- Silent on zero. A streamer who got no clicks last month sees nothing at all — no card, no "0 clicks." A visible zero reads as a verdict; absence just reads as nothing having happened yet
+- Not a dashboard. There's no page to go check this number whenever you like — it shows up once, you dismiss it, it's gone until next month produces something worth saying
+- `outbound_clicks` is still completely locked at the table level — zero read policies, same as before. This doesn't change that; it adds one more narrow, purpose-built function that reads it server-side and returns only what the caller is entitled to see, same shape as the achievement sweep already does
+- privacy.html and README.md both needed a real correction here, not just an addition — both previously stated flatly that no number is ever shown to anyone. That's no longer true, and pretending otherwise in the privacy policy would've been worse than the thing we were trying to avoid in the first place. Both now describe the digest honestly
+- Straightforward to test with real traffic once a full month's gone by. Harder to verify on demand without hand-seeding `outbound_clicks` rows dated last month — worth keeping in mind if this doesn't show up immediately after deploy
+
+---
 [2026-09-14] - OUTBOUND CLICK TRACKING (Private, Aggregate Only)
 
 ### Added

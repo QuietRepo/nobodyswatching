@@ -790,6 +790,83 @@
 
         .discord-nudge-skip:hover { color: var(--text-secondary); }
 
+        .click-digest-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .click-digest-card {
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 420px;
+            width: 100%;
+            position: relative;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .click-digest-close {
+            position: absolute;
+            top: 1rem;
+            right: 1.25rem;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .click-digest-close:hover { color: var(--text-primary); }
+
+        .click-digest-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .click-digest-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        .click-digest-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .click-digest-dismiss {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            background: var(--accent);
+            color: #fff;
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .click-digest-dismiss:hover {
+            transform: translateY(-2px);
+        }
+
         .modal .form-input {
             margin-bottom: 1.25rem;
         }
@@ -1466,6 +1543,7 @@
 
             renderShareBlock();
             loadAchievements();
+            maybeShowClickDigest();
         }
 
         // =============================================
@@ -1986,6 +2064,63 @@
         });
 
         // =============================================
+        // CLICK DIGEST — private, monthly, silent when there's nothing
+        // to report. Never a live/permanent number, just a one-off card
+        // for last month's total, shown at most once per calendar month.
+        // See migration-outbound-clicks.sql and get-click-digest.mjs.
+        // =============================================
+        async function maybeShowClickDigest() {
+            if (!currentProfile || !currentAccessToken) return;
+
+            let result;
+            try {
+                const res = await fetch('/.netlify/functions/get-click-digest', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${currentAccessToken}` }
+                });
+                if (!res.ok) return; // nice-to-have, not core functionality — fail silently
+                result = await res.json();
+            } catch (err) {
+                console.error('Click digest check failed:', err);
+                return;
+            }
+
+            const { clicks, currentMonth } = result;
+
+            // Zero clicks, or this month's digest already seen — stay
+            // silent either way. A visible zero reads as a verdict; no
+            // card at all just reads as nothing having happened yet.
+            if (!clicks || currentProfile.last_click_digest_month === currentMonth) return;
+
+            // Mark it seen immediately, same reasoning as the Discord
+            // nudge — a slow response or rapid re-render shouldn't be
+            // able to show this twice.
+            currentProfile.last_click_digest_month = currentMonth;
+            await sb
+                .from('profiles')
+                .update({ last_click_digest_month: currentMonth })
+                .eq('id', currentUser.id);
+
+            document.getElementById('click-digest-text').textContent =
+                `Your links were clicked ${clicks} time${clicks === 1 ? '' : 's'} last month — someone found their way from here to your channel.`;
+
+            setTimeout(() => {
+                document.getElementById('click-digest-modal').style.display = 'flex';
+            }, 900);
+        }
+
+        function closeClickDigest() {
+            document.getElementById('click-digest-modal').style.display = 'none';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeClickDigest();
+        });
+        document.getElementById('click-digest-modal')?.addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeClickDigest();
+        });
+
+        // =============================================
         // TOAST
         // =============================================
         function showToast(message, type = 'success') {
@@ -2077,6 +2212,17 @@
                 💬 Join the Discord
             </a>
             <p class="discord-nudge-skip" onclick="closeDiscordNudge()">Maybe later</p>
+        </div>
+    </div>
+
+    <!-- CLICK DIGEST MODAL -->
+    <div class="click-digest-overlay" id="click-digest-modal" style="display: none;">
+        <div class="click-digest-card">
+            <div class="click-digest-close" onclick="closeClickDigest()">×</div>
+            <div class="click-digest-icon">👀</div>
+            <h3 class="click-digest-title">Last month</h3>
+            <p class="click-digest-text" id="click-digest-text"></p>
+            <button type="button" class="click-digest-dismiss" onclick="closeClickDigest()">Got it</button>
         </div>
     </div>
 
