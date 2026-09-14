@@ -12,12 +12,16 @@ All notable changes to NobodysWatching.live are documented here.
 - `record_outbound_click()` — the only way anything gets written, called from a new unauthenticated Netlify function (`track-click.mjs`) via `navigator.sendBeacon`, so a click never delays or interferes with the link's own navigation
 - `rollup_outbound_clicks()` — day-level detail collapses into monthly totals after six months. Nothing is ever deleted, just made coarser, so year-on-year comparisons stay possible indefinitely. Scheduled via `pg_cron`, not yet turned on since nothing's six months old yet
 
+### Fixed
+- Live testing right after deploy found zero rows landing anywhere — the carousel, spotlight, and directory pills all sit inside clickable cards and already carry `onclick="event.stopPropagation()"` (so clicking a pill doesn't also trigger the card's own navigation to the profile page). That stops the click from bubbling any further, which silently stopped it from ever reaching the tracking listener too, since it was listening the normal way. Fixed by listening on the capture phase instead — runs on the way down to the pill, before its own `onclick` gets the chance to cut the event off. `streamer.html`'s links never had this problem, since nothing there calls `stopPropagation()`
+- Confirmed working end to end afterwards: directory, spotlight, and carousel pills all landing rows correctly
+
 ### Notes
 - This is not analytics. There's no visitor identity, no session, no IP, no ordering of events — a row says "this profile's Twitch link was clicked 4 times on the 14th," full stop. You could not reconstruct one visitor's path through the site from this table if you tried
 - `outbound_clicks` has Row Level Security on and zero policies — not even the streamer it's about can read it. The only thing this data will ever surface is a future private achievement once a profile's links have been clicked a handful of times. No number is shown anywhere, to anyone, ever
 - The "Playing Now" chip row was deliberately left out — clicking a chip filters the directory, it doesn't leave the site, so there's nothing to count
 - Endpoint checks the request's Origin/Referer against the site's own domain before writing anything. Stops casual poking around, not a determined script — acceptable given the table has no public read access regardless, so the worst case is a slightly inflated internal number, not exposed data
-- privacy.html and README.md both currently say the site does zero tracking of any kind — that's no longer quite true and both need a short, honest update to match. Not done yet
+- README.md's Privacy section has been updated to match. privacy.html still says the site does zero tracking of any kind — that's no longer quite true and still needs a short, honest update. Not done yet
 - The achievement itself (something like "someone clicked through to you") isn't wired up yet — this ships the counting, not the payoff
 
 ---
