@@ -30,6 +30,7 @@ When you go live on Twitch, Kick, or YouTube, the site detects it automatically 
 - **Recommended channels** — a streamer viewing their own public profile page sees 3 others matched on genre/top games, picked at random, never sorted by size — with a "go get 'em" callout if one happens to be live. Not shown to their audience, just a discovery nudge for the streamer themselves
 - **Random Streamer button** — discover someone new by pure chance
 - **Achievements** — private, participation-only badges (profile setup, going live, linking platforms, using the discovery features) visible only to the streamer themselves, never tied to popularity
+- **Outbound click counting** — anonymous, aggregate-only tracking of clicks from the site to a streamer's actual channel, so the site can eventually say whether it's doing anything rather than just hoping. No visitor data of any kind — see Privacy below
 - **Message of the Day** — dismissible, auto-expiring site-wide announcements
 - **Discord "who's live" announcer** — posts one live streamer every 30 minutes to the community Discord, bounded and predictable rather than event-spammy
 - **Profile visibility controls** — a manual, reversible full-hide for bad-actor accounts, filtered at the database level, distinct from the Spotlight-only exemption used for AFK/rerun edge cases
@@ -72,6 +73,7 @@ nobodyswatching-site/
     ├── check-live-status.mjs           # Multi-platform live polling, achievement triggers, Spotlight selection
     ├── announce-live-streamer.mjs      # Discord "who's live" announcer (every 30 min)
     ├── award-achievement.mjs           # Authenticated endpoint for client-triggered achievements
+    ├── track-click.mjs                 # Unauthenticated outbound-click counter, aggregate only
     └── lib/
         └── achievements.mjs            # Shared achievement-catalog + award helpers
 ```
@@ -89,15 +91,17 @@ nobodyswatching-site/
    - Computes the Spotlight winner and awards In the Spotlight
 5. The homepage queries Supabase and renders the live carousel, directory grid, Playing Now chips, and Spotlight
 6. Achievements the client can only self-report (Used Raid Finder, Feeling lucky, Playing the field) are sent to a small server function, which re-verifies anything checkable before writing
-7. Everything is client-side — no server rendering, no build step, aside from the scheduled functions and the achievement endpoint
+7. Every exit link on the site (carousel/spotlight/directory pills, streamer page platform links, Watch Now, Also Live, Raid preview) fires an anonymous click to `track-click.mjs` via `sendBeacon` on click — never blocking the link's own navigation
+8. Everything is client-side — no server rendering, no build step, aside from the scheduled functions and the achievement/click endpoints
 
 ## Privacy
 
 We take a minimal approach to data:
 
 - **Stored:** username, avatar URL, bio, timezone, genres, games, platform links, live status
-- **Not stored:** email, real name, location, IP address, browsing activity
-- **No tracking:** no Google Analytics, no Facebook Pixel, no cookies beyond auth
+- **Not stored, ever:** email, real name, location, IP address, or anything that identifies *you* as a visitor — no session, no cookie tracking you across the site, no record of which profiles you looked at or when
+- **Stored, but not about you:** an anonymous count of clicks from the site to a streamer's channel — bucketed by profile, surface, platform, and day. It answers "did anyone click through to this streamer," never "who clicked." Full breakdown in [CHANGELOG.md](./CHANGELOG.md)
+- **No analytics:** no Google Analytics, no Facebook Pixel, no cookies beyond auth. The click counter above is the one exception, and it's about the destination, not the visitor
 - **Full policy:** [nobodyswatching.live/privacy.html](https://nobodyswatching.live/privacy.html)
 
 ## Local Development
@@ -153,9 +157,9 @@ The `profiles` table in Supabase:
 | has_seen_discord_nudge | BOOLEAN | One-time Discord invite nudge, tracked per-account |
 | created_at, updated_at | TIMESTAMP | Auto-set / auto-updated |
 
-Also: `site_messages` (Message of the Day), `discord_announcements` (who's-live announcer history), `achievements` (achievement catalog) and `profile_achievements` (which streamer has earned what, when).
+Also: `site_messages` (Message of the Day), `discord_announcements` (who's-live announcer history), `achievements` (achievement catalog), `profile_achievements` (which streamer has earned what, when), and `outbound_clicks` (anonymous outbound click counts — profile, surface, platform, and UTC day, nothing else — rolled up from daily to monthly after six months, never deleted).
 
-RLS is enabled throughout: public read where the data is meant to be public (profiles, active messages, the achievement catalog), owner-only read for private data (a streamer's own earned achievements), and all writes go through the service role from scheduled functions or verified endpoints — never directly from the client. A database trigger auto-creates a profile row on first sign-in.
+RLS is enabled throughout: public read where the data is meant to be public (profiles, active messages, the achievement catalog), owner-only read for private data (a streamer's own earned achievements), and all writes go through the service role from scheduled functions or verified endpoints — never directly from the client. `outbound_clicks` goes a step further: zero read policies at all, not even for the streamer it's about, since the only thing that table will ever surface is a future private achievement, never a visible number. A database trigger auto-creates a profile row on first sign-in.
 
 ## Contributing
 

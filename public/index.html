@@ -3398,9 +3398,9 @@
                 : url;
 
             if (isLive) {
-                return `<a href="${esc(clickUrl)}" target="_blank" rel="noopener" class="plat-pill plat-pill-live" style="background:${meta.color};color:${meta.textOnColor};" onclick="event.stopPropagation()"><span class="plat-pill-dot" style="background:${meta.textOnColor};"></span>${meta.label}</a>`;
+                return `<a href="${esc(clickUrl)}" target="_blank" rel="noopener" class="plat-pill plat-pill-live" data-profile-id="${esc(profile.id)}" data-platform="${platformKey}" style="background:${meta.color};color:${meta.textOnColor};" onclick="event.stopPropagation()"><span class="plat-pill-dot" style="background:${meta.textOnColor};"></span>${meta.label}</a>`;
             }
-            return `<a href="${esc(clickUrl)}" target="_blank" rel="noopener" class="plat-pill plat-pill-offline" onclick="event.stopPropagation()"><span class="plat-pill-dot"></span>${meta.label}</a>`;
+            return `<a href="${esc(clickUrl)}" target="_blank" rel="noopener" class="plat-pill plat-pill-offline" data-profile-id="${esc(profile.id)}" data-platform="${platformKey}" onclick="event.stopPropagation()"><span class="plat-pill-dot"></span>${meta.label}</a>`;
         }
 
         function renderAllPlatformPills(profile) {
@@ -3776,9 +3776,10 @@
             // "check them out first" step — same logic used for the main
             // Watch Now button on their profile page.
             let previewUrl;
-            if (p.live_platform === 'twitch.tv') previewUrl = p.twitch_url;
-            else if (p.live_platform === 'kick.com') previewUrl = p.kick_url;
-            else previewUrl = p.youtube_live_video_url || p.youtube_url;
+            let previewPlatform;
+            if (p.live_platform === 'twitch.tv') { previewUrl = p.twitch_url; previewPlatform = 'twitch'; }
+            else if (p.live_platform === 'kick.com') { previewUrl = p.kick_url; previewPlatform = 'kick'; }
+            else { previewUrl = p.youtube_live_video_url || p.youtube_url; previewPlatform = 'youtube'; }
 
             // "Check them out first" — a real button, not a subtle text
             // link. Testers specifically asked to verify fit before
@@ -3786,7 +3787,7 @@
             // not after it.
             const previewHtml = `
                 <div class="raid-preview-row">
-                    <a href="${esc(previewUrl)}" target="_blank" rel="noopener" class="raid-preview-btn">👀 Check them out first ↗</a>
+                    <a href="${esc(previewUrl)}" target="_blank" rel="noopener" class="raid-preview-btn" data-profile-id="${esc(p.id)}" data-platform="${previewPlatform}">👀 Check them out first ↗</a>
                     <button class="raid-copy-btn raid-copy-link-btn" onclick="copyRaidCommand('${esc(previewUrl).replace(/'/g, "\\'")}', this)" title="Copy stream link">🔗</button>
                 </div>
             `;
@@ -3900,6 +3901,41 @@
         function scrollToDirectoryTop() {
             document.getElementById('directory').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+
+        // =============================================
+        // OUTBOUND CLICK TRACKING
+        //
+        // One delegated listener, attached once — covers the carousel,
+        // spotlight, and directory grid regardless of how often they
+        // re-render, since a per-card listener would need re-attaching
+        // on every refresh. See migration-outbound-clicks.sql.
+        // =============================================
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a[data-profile-id][data-platform]');
+            if (!link) return;
+
+            const profileId = link.dataset.profileId;
+            const platform = link.dataset.platform;
+
+            let source;
+            if (link.classList.contains('raid-preview-btn')) {
+                source = 'raid_finder';
+            } else if (link.closest('#live-carousel')) {
+                source = 'carousel';
+            } else if (link.closest('#spotlight-card')) {
+                source = 'spotlight';
+            } else if (link.closest('#streamer-grid')) {
+                source = 'directory';
+            } else {
+                return; // Matched element, unrecognised surface — don't guess, don't send.
+            }
+
+            const payload = JSON.stringify({ profileId, source, platform });
+            navigator.sendBeacon(
+                '/.netlify/functions/track-click',
+                new Blob([payload], { type: 'application/json' })
+            );
+        });
     </script>
 
 </body>

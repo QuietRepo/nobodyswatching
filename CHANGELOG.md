@@ -3,6 +3,24 @@
 All notable changes to NobodysWatching.live are documented here.
 
 ---
+[2026-09-14] - OUTBOUND CLICK TRACKING (Private, Aggregate Only)
+
+### Added
+- A private counter for how many people click through from the site to a streamer's actual channel — the thing "did NWL help you?" was trying and failing to measure with a Discord poll last week (0 votes in 24 hours, if you're wondering what prompted this)
+- Every genuine exit link now reports a click: the live carousel, spotlight card, and directory grid pills, the "Also live on" band and platform links on individual streamer pages, the main Watch Now button, and the Raid Finder's "Check them out first" button
+- New `outbound_clicks` table, bucketed by profile + surface + platform + UTC day. A click doesn't create a row, it increments one — ten clicks on the same link on the same day is one row reading 10, not ten rows
+- `record_outbound_click()` — the only way anything gets written, called from a new unauthenticated Netlify function (`track-click.mjs`) via `navigator.sendBeacon`, so a click never delays or interferes with the link's own navigation
+- `rollup_outbound_clicks()` — day-level detail collapses into monthly totals after six months. Nothing is ever deleted, just made coarser, so year-on-year comparisons stay possible indefinitely. Scheduled via `pg_cron`, not yet turned on since nothing's six months old yet
+
+### Notes
+- This is not analytics. There's no visitor identity, no session, no IP, no ordering of events — a row says "this profile's Twitch link was clicked 4 times on the 14th," full stop. You could not reconstruct one visitor's path through the site from this table if you tried
+- `outbound_clicks` has Row Level Security on and zero policies — not even the streamer it's about can read it. The only thing this data will ever surface is a future private achievement once a profile's links have been clicked a handful of times. No number is shown anywhere, to anyone, ever
+- The "Playing Now" chip row was deliberately left out — clicking a chip filters the directory, it doesn't leave the site, so there's nothing to count
+- Endpoint checks the request's Origin/Referer against the site's own domain before writing anything. Stops casual poking around, not a determined script — acceptable given the table has no public read access regardless, so the worst case is a slightly inflated internal number, not exposed data
+- privacy.html and README.md both currently say the site does zero tracking of any kind — that's no longer quite true and both need a short, honest update to match. Not done yet
+- The achievement itself (something like "someone clicked through to you") isn't wired up yet — this ships the counting, not the payoff
+
+---
 [2026-09-12] - SHARE CARDS (OPEN GRAPH)
 
 ### Fixed

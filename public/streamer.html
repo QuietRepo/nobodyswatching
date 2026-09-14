@@ -1088,6 +1088,11 @@
         // RENDER PROFILE
         // =============================================
         function renderProfile(p) {
+            // Set once here rather than repeated per-link — every exit link
+            // on this page belongs to the same profile. Read by the outbound
+            // click tracker at the bottom of the page.
+            document.body.dataset.profileId = p.id;
+
             // Update page title
             document.title = `${p.username} — NobodysWatching.live`;
 
@@ -1146,9 +1151,9 @@
             if (p.is_live) {
                 // Build "Also live on" pills for every OTHER platform they're currently live on
                 const platformMeta = {
-                    'twitch.tv': { label: 'Twitch', url: p.twitch_url, cls: 'plat-twitch' },
-                    'youtube.com': { label: 'YouTube', url: p.youtube_live_video_url || p.youtube_url, cls: 'plat-youtube' },
-                    'kick.com': { label: 'Kick', url: p.kick_url, cls: 'plat-kick' }
+                    'twitch.tv': { label: 'Twitch', url: p.twitch_url, cls: 'plat-twitch', platform: 'twitch' },
+                    'youtube.com': { label: 'YouTube', url: p.youtube_live_video_url || p.youtube_url, cls: 'plat-youtube', platform: 'youtube' },
+                    'kick.com': { label: 'Kick', url: p.kick_url, cls: 'plat-kick', platform: 'kick' }
                 };
                 const otherLive = (p.live_platforms || [])
                     .filter(key => key !== p.live_platform && platformMeta[key] && platformMeta[key].url);
@@ -1157,7 +1162,7 @@
                 if (otherLive.length > 0) {
                     const pills = otherLive.map(key => {
                         const m = platformMeta[key];
-                        return `<a href="${esc(m.url)}" target="_blank" rel="noopener" class="also-live-pill ${m.cls}"><span class="also-live-dot"></span>${m.label}</a>`;
+                        return `<a href="${esc(m.url)}" target="_blank" rel="noopener" class="also-live-pill ${m.cls}" data-platform="${m.platform}"><span class="also-live-dot"></span>${m.label}</a>`;
                     }).join('');
                     alsoLiveHtml = `
                         <div class="also-live-row">
@@ -1176,7 +1181,7 @@
                                 <div class="live-banner-meta">${p.live_viewer_count || 0} viewer${p.live_viewer_count !== 1 ? 's' : ''} watching${p.live_platform ? ' on ' + esc(p.live_platform) : ''}</div>
                             </div>
                         </div>
-                        <a href="${esc(watchUrl)}" target="_blank" rel="noopener" class="btn-watch ${watchClass}">▶ Watch Now</a>
+                        <a href="${esc(watchUrl)}" target="_blank" rel="noopener" class="btn-watch ${watchClass}" data-platform="${watchClass.replace('plat-', '')}">▶ Watch Now</a>
                         ${alsoLiveHtml}
                     </div>
                 `;
@@ -1228,7 +1233,7 @@
 
             if (p.twitch_url) {
                 platformsHtml += `
-                    <a href="${esc(p.twitch_url)}" target="_blank" rel="noopener" class="platform-link">
+                    <a href="${esc(p.twitch_url)}" target="_blank" rel="noopener" class="platform-link" data-platform="twitch">
                         <span class="platform-link-icon twitch">Twitch</span>
                         <div>
                             <div class="platform-link-name">Twitch</div>
@@ -1241,7 +1246,7 @@
 
             if (p.youtube_url) {
                 platformsHtml += `
-                    <a href="${esc(p.youtube_url)}" target="_blank" rel="noopener" class="platform-link">
+                    <a href="${esc(p.youtube_url)}" target="_blank" rel="noopener" class="platform-link" data-platform="youtube">
                         <span class="platform-link-icon youtube">YouTube</span>
                         <div>
                             <div class="platform-link-name">YouTube</div>
@@ -1254,7 +1259,7 @@
 
             if (p.kick_url) {
                 platformsHtml += `
-                    <a href="${esc(p.kick_url)}" target="_blank" rel="noopener" class="platform-link">
+                    <a href="${esc(p.kick_url)}" target="_blank" rel="noopener" class="platform-link" data-platform="kick">
                         <span class="platform-link-icon kick">Kick</span>
                         <div>
                             <div class="platform-link-name">Kick</div>
@@ -1267,7 +1272,7 @@
 
             if (p.rumble_url) {
                 platformsHtml += `
-                    <a href="${esc(p.rumble_url)}" target="_blank" rel="noopener" class="platform-link">
+                    <a href="${esc(p.rumble_url)}" target="_blank" rel="noopener" class="platform-link" data-platform="rumble">
                         <span class="platform-link-icon rumble">Rumble</span>
                         <div>
                             <div class="platform-link-name">Rumble</div>
@@ -1280,7 +1285,7 @@
 
             if (p.tiktok_url) {
                 platformsHtml += `
-                    <a href="${esc(p.tiktok_url)}" target="_blank" rel="noopener" class="platform-link">
+                    <a href="${esc(p.tiktok_url)}" target="_blank" rel="noopener" class="platform-link" data-platform="tiktok">
                         <span class="platform-link-icon tiktok">TikTok</span>
                         <div>
                             <div class="platform-link-name">TikTok</div>
@@ -1293,7 +1298,7 @@
 
             if (p.velora_url) {
                 platformsHtml += `
-                    <a href="${esc(p.velora_url)}" target="_blank" rel="noopener" class="platform-link">
+                    <a href="${esc(p.velora_url)}" target="_blank" rel="noopener" class="platform-link" data-platform="velora">
                         <span class="platform-link-icon velora">Velora</span>
                         <div>
                             <div class="platform-link-name">Velora</div>
@@ -1473,6 +1478,32 @@
         }
 
         init();
+
+        // =============================================
+        // OUTBOUND CLICK TRACKING
+        //
+        // One profile per page, so the profile id is read once from
+        // document.body.dataset.profileId (set in renderProfile) rather
+        // than repeated on every link. See migration-outbound-clicks.sql.
+        // =============================================
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('.btn-watch[data-platform], .platform-link[data-platform], .also-live-pill[data-platform]');
+            if (!link) return;
+
+            const profileId = document.body.dataset.profileId;
+            const platform = link.dataset.platform;
+            if (!profileId || !platform) return;
+
+            const source = link.classList.contains('btn-watch') ? 'watch_now'
+                : link.classList.contains('also-live-pill') ? 'also_live'
+                : 'profile';
+
+            const payload = JSON.stringify({ profileId, source, platform });
+            navigator.sendBeacon(
+                '/.netlify/functions/track-click',
+                new Blob([payload], { type: 'application/json' })
+            );
+        });
     </script>
 
     <!-- FLOATING FEEDBACK BUTTON -->
