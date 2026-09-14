@@ -271,7 +271,7 @@
     <div class="page-content">
         <div class="section-comment">// the boring but important bit</div>
         <h1 class="page-title">PRIVACY</h1>
-        <p class="page-subtitle">Last updated: April 2026. Written in plain English because legal jargon helps nobody.</p>
+        <p class="page-subtitle">Last updated: September 2026. Written in plain English because legal jargon helps nobody.</p>
 
         <div class="content-block">
             <h2>// the short version</h2>
@@ -350,8 +350,43 @@
                         <td class="no">No</td>
                         <td>No tracking scripts, no analytics</td>
                     </tr>
+                    <tr>
+                        <td>Outbound link clicks (Twitch/YouTube/etc)</td>
+                        <td class="yes">Yes*</td>
+                        <td>*An anonymous count, not about you — see below</td>
+                    </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div class="content-block">
+            <h2>// outbound link clicks</h2>
+            <p>
+                When you click a link that takes you from this site to someone's actual Twitch, 
+                YouTube, or other channel, we count it. Not you — the click. There's a real 
+                difference, and here's the honest breakdown:
+            </p>
+            <p>
+                We do not know who clicked. There's no session, no cookie, no IP address, 
+                no account tied to the click, nothing that could ever be traced back to a 
+                visitor. What we keep is a number: this profile's Twitch link was clicked 
+                4 times today. That's genuinely the entire fidelity of it — no timestamps 
+                beyond the date, no order, no way to reconstruct anyone's path through the site.
+            </p>
+            <p>
+                We use this two ways. First, honestly, to find out whether this site does 
+                anything at all — "the directory sent 40 people to streamers' channels last 
+                month" is a real claim we couldn't make before. Second, once a streamer's 
+                links have been clicked a handful of times, they'll quietly earn a private 
+                achievement for it. No number is ever shown to them or anyone else — same 
+                rule as every other achievement on the site.
+            </p>
+            <p>
+                Daily detail gets collapsed into monthly totals after six months. Nothing is 
+                ever deleted outright, just made coarser over time — which also means the 
+                data gets less specific the older it gets, not more.
+            </p>
+            <p class="disclaimer">*We know "anonymous but we still count it" is the kind of line every tracking company says. The difference: nothing about the table lets it be traced to you even if someone tried — there's simply no visitor data in it to trace. The site and its public API can't read this table at all, full stop. Like everything else here, whoever runs the database can technically go looking at the raw numbers — same as any site owner can query their own database. There's just nothing about you in there to find.</p>
         </div>
 
         <div class="content-block">
@@ -413,7 +448,9 @@
                 the public channel identifiers that streamers have explicitly added to their profile.
             </p>
             <p>
-                We don't use Google Analytics, Facebook Pixel, or any other tracking tools.
+                We don't use Google Analytics, Facebook Pixel, or any other third-party 
+                tracking tool. The one thing we do count ourselves is anonymous outbound 
+                link clicks — see "outbound link clicks" above for the honest breakdown.
             </p>
             <p>
                 Fonts are loaded from Google Fonts, which may log basic request data 
