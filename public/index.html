@@ -3909,6 +3909,17 @@
         // spotlight, and directory grid regardless of how often they
         // re-render, since a per-card listener would need re-attaching
         // on every refresh. See migration-outbound-clicks.sql.
+        //
+        // CAPTURE PHASE, DELIBERATELY: the pills this targets already
+        // carry onclick="event.stopPropagation()" (so a pill click inside
+        // a clickable card doesn't also trigger the card's own
+        // navigation). stopPropagation() stops the event from bubbling
+        // any further — which would silently stop this exact listener
+        // from ever seeing the click, if it were registered the normal
+        // (bubble-phase) way. Listening on the capture phase instead
+        // means this runs on the way DOWN to the pill, before the pill's
+        // own onclick fires and cuts the event off. True regardless of
+        // what stopPropagation() calls exist anywhere below this.
         // =============================================
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a[data-profile-id][data-platform]');
@@ -3935,7 +3946,7 @@
                 '/.netlify/functions/track-click',
                 new Blob([payload], { type: 'application/json' })
             );
-        });
+        }, true); // true = capture phase, see comment above
     </script>
 
 </body>
