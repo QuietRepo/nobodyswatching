@@ -668,6 +668,22 @@ export default async function handler() {
             awardOps.push(award(supabase, achievementIds, spotlightWinner.id, 'hit_spotlight'));
         }
 
+        // 6. Outbound clicks — anyone whose links have collectively been
+        // clicked 5+ times gets "Someone's Watching". Same idempotent
+        // pattern as everything above: award() no-ops silently if they
+        // already have it, so it's safe to re-check every 3 minutes
+        // rather than tracking who's already qualified separately.
+        const { data: clickQualifiers, error: clickQualifiersError } = await supabase
+            .rpc('profiles_over_click_threshold', { p_threshold: 5 });
+
+        if (clickQualifiersError) {
+            console.error('Click-threshold check failed:', clickQualifiersError.message);
+        } else {
+            for (const { profile_id } of clickQualifiers) {
+                awardOps.push(award(supabase, achievementIds, profile_id, 'someones_watching'));
+            }
+        }
+
         await Promise.all(awardOps);
 
         const totalLive = twitchLive.size + kickLive.size + youtubeLive.size;
