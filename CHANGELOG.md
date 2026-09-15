@@ -3,6 +3,21 @@
 All notable changes to NobodysWatching.live are documented here.
 
 ---
+[2026-09-15] - SEO CLEANUP: BROKEN PLATFORM LINKS + DUPLICATE PROFILE INDEXING
+
+### Fixed
+- Broken platform links: streamer.html's platform link list, index.html's platform pills, and the Raid Finder preview were all quietly building `<a href>` straight from whatever got typed into the profile form's Twitch/YouTube/Kick/Rumble/TikTok/Velora fields. A value saved without `https://` (e.g. `youtube.com/@user`) renders as a relative link, which resolves to `nobodyswatching.live/youtube.com/@user` instead of leaving the site — a real broken link on a live profile page, not just an SEO footnote. A couple of profiles had it worse: a bare username with no domain at all, saved straight into a platform field
+- Root cause: the platform inputs are `type="url"`, which looks like it validates but does nothing unless something calls form/report validity — `saveProfile()` never did, so anything typed there saved through unchanged
+- `profile.html` now runs every platform field through a `normalizeUrl()` helper on save — no protocol gets a `https://` prepended before it ever reaches the database
+- `streamer.html` and `index.html` run the same normalization defensively at render time, so profiles that already have bad URLs sitting in the database stop generating broken links immediately, rather than waiting on each streamer to notice and re-save their profile
+- Added a canonical tag to every streamer profile. Every profile page shares identical static markup with the actual content (title, bio, platforms) injected via JS, and Search Console had ~130 profiles flagged "duplicate without user-selected canonical" as a result — Google was picking one profile arbitrarily to index out of every batch it considered near-identical. Fixed in `profile-meta.js` (the edge function that rewrites `<head>` for Googlebot and other crawlers directly — see its own comments for why) and mirrored in `renderProfile()` client-side for anything reading the DOM after JS runs instead
+
+### Notes
+- Nothing here touches existing profile data beyond how it's rendered — no database rewrite, no streamer needs to do anything on their end
+- Surfaced by finally submitting the (already-live-since-August) `sitemap.xml` to Google Search Console and actually reading what it said back
+- `streamer.html` also picked up a static fallback `<link rel="canonical">` for the edge case of the page loading with no `?user=` or a profile that doesn't resolve — cosmetic compared to the two fixes above, but means there's never a moment with zero canonical tag present
+
+---
 [2026-09-14] - MONTHLY CLICK DIGEST
 
 ### Added

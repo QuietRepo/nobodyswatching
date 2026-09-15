@@ -3352,6 +3352,17 @@
             return div.innerHTML;
         }
 
+        // Defensive normalization for platform URLs that were saved before
+        // profile.html started enforcing a protocol (or saved directly in
+        // the database). Without this, a value like "youtube.com/@user"
+        // renders as a relative <a href>, which resolves against
+        // nobodyswatching.live itself and 404s instead of leaving the site.
+        function normalizeUrl(value) {
+            const trimmed = (value || '').trim();
+            if (!trimmed) return '';
+            return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+        }
+
         // =============================================
         // PLATFORM PILL — shows live/offline state consistently
         // across grid cards, carousel cards, and the spotlight
@@ -3385,7 +3396,7 @@
 
         function renderPlatformPill(profile, platformKey) {
             const meta = PLATFORM_META[platformKey];
-            const url = profile[meta.url];
+            const url = normalizeUrl(profile[meta.url]);
             if (!url) return '';
 
             const isLive = meta.liveKey && (profile.live_platforms || []).includes(meta.liveKey);
@@ -3394,7 +3405,7 @@
             // Twitch's does — so when they're live, send viewers straight to
             // the specific video instead of their general channel page.
             const clickUrl = (isLive && platformKey === 'youtube' && profile.youtube_live_video_url)
-                ? profile.youtube_live_video_url
+                ? normalizeUrl(profile.youtube_live_video_url)
                 : url;
 
             if (isLive) {
@@ -3780,6 +3791,7 @@
             if (p.live_platform === 'twitch.tv') { previewUrl = p.twitch_url; previewPlatform = 'twitch'; }
             else if (p.live_platform === 'kick.com') { previewUrl = p.kick_url; previewPlatform = 'kick'; }
             else { previewUrl = p.youtube_live_video_url || p.youtube_url; previewPlatform = 'youtube'; }
+            previewUrl = normalizeUrl(previewUrl);
 
             // "Check them out first" — a real button, not a subtle text
             // link. Testers specifically asked to verify fit before

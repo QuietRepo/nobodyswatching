@@ -1460,6 +1460,17 @@
             }[c]));
         }
 
+        // A platform link saved without a protocol (e.g. "youtube.com/@user"
+        // instead of "https://youtube.com/@user") renders as a relative <a
+        // href>, which resolves against nobodyswatching.live itself and
+        // 404s. Force a protocol on the way into the database so this can't
+        // happen for anything saved from here on.
+        function normalizeUrl(value) {
+            const trimmed = (value || '').trim();
+            if (!trimmed) return null;
+            return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+        }
+
         // =============================================
         // AUTH
         // =============================================
@@ -1964,7 +1975,7 @@
             saveBtn.disabled = true;
             saveBtn.textContent = '⏳ Saving...';
 
-            const twitchUrl = document.getElementById('twitch-url').value.trim() || null;
+            const twitchUrl = normalizeUrl(document.getElementById('twitch-url').value);
             // Extract username from Twitch URL for the polling function
             let twitchUsername = null;
             if (twitchUrl) {
@@ -1995,11 +2006,11 @@
                 top_games: games,
                 twitch_url: twitchUrl,
                 twitch_username: twitchUsername,
-                youtube_url: document.getElementById('youtube-url').value.trim() || null,
-                kick_url: document.getElementById('kick-url').value.trim() || null,
-                rumble_url: document.getElementById('rumble-url').value.trim() || null,
-                tiktok_url: document.getElementById('tiktok-url').value.trim() || null,
-                velora_url: document.getElementById('velora-url').value.trim() || null,
+                youtube_url: normalizeUrl(document.getElementById('youtube-url').value),
+                kick_url: normalizeUrl(document.getElementById('kick-url').value),
+                rumble_url: normalizeUrl(document.getElementById('rumble-url').value),
+                tiktok_url: normalizeUrl(document.getElementById('tiktok-url').value),
+                velora_url: normalizeUrl(document.getElementById('velora-url').value),
                 preferred_platform: document.getElementById('preferred-platform').value || null,
                 updated_at: new Date().toISOString()
             };

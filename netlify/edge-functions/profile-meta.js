@@ -146,6 +146,7 @@ export default async function handler(request, context) {
     const tags = [
         `<title>${esc(title)}</title>`,
         `<meta name="description" content="${esc(description)}">`,
+        `<link rel="canonical" href="${esc(canonical)}">`,
         `<meta property="og:title" content="${esc(title)}">`,
         `<meta property="og:description" content="${esc(description)}">`,
         `<meta property="og:type" content="profile">`,
@@ -172,6 +173,7 @@ export default async function handler(request, context) {
     html = html
         .replace(/[ \t]*<meta\s+(?:property|name)="(?:og|twitter):[^"]*"[^>]*>\s*\n?/gi, '')
         .replace(/[ \t]*<meta\s+name="description"[^>]*>\s*\n?/gi, '')
+        .replace(/[ \t]*<link\s+rel="canonical"[^>]*>\s*\n?/gi, '')
         .replace(/<title>[\s\S]*?<\/title>/i, '');
 
     const block = '\n    ' + tags.join('\n    ') + '\n';

@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Streamer Profile — NobodysWatching.live</title>
     <meta name="description" content="Check out this streamer on NobodysWatching.live — where small streamers get seen.">
+    <!-- Fallback canonical for the no-?user=/profile-not-found case. Real
+         profile requests get a per-user canonical from the profile-meta
+         edge function (crawlers) and from renderProfile() (JS, everyone
+         else) — see those for the actual fix for duplicate-content
+         indexing. -->
+    <link rel="canonical" href="https://nobodyswatching.live/streamer.html">
 
     <!-- =========================================================
          Default share card.
@@ -1050,6 +1056,17 @@
             return div.innerHTML;
         }
 
+        // Defensive normalization for platform URLs that were saved before
+        // profile.html started enforcing a protocol (or saved directly in
+        // the database). Without this, a value like "youtube.com/@user"
+        // renders as a relative <a href>, which resolves against
+        // nobodyswatching.live itself and 404s instead of leaving the site.
+        function normalizeUrl(value) {
+            const trimmed = (value || '').trim();
+            if (!trimmed) return '';
+            return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+        }
+
         function renderBadges(badges) {
             if (!badges || badges.length === 0) return '';
             const badgeMap = {
@@ -1088,6 +1105,17 @@
         // RENDER PROFILE
         // =============================================
         function renderProfile(p) {
+            // Normalize every platform URL once, up front, so nothing below
+            // this point — the primary/watch URL, the platform link list —
+            // can end up rendering a protocol-less value as a relative link.
+            p.twitch_url = normalizeUrl(p.twitch_url);
+            p.youtube_url = normalizeUrl(p.youtube_url);
+            p.youtube_live_video_url = normalizeUrl(p.youtube_live_video_url);
+            p.kick_url = normalizeUrl(p.kick_url);
+            p.rumble_url = normalizeUrl(p.rumble_url);
+            p.tiktok_url = normalizeUrl(p.tiktok_url);
+            p.velora_url = normalizeUrl(p.velora_url);
+
             // Set once here rather than repeated per-link — every exit link
             // on this page belongs to the same profile. Read by the outbound
             // click tracker at the bottom of the page.
@@ -1099,10 +1127,27 @@
             // Update meta description
             const metaDesc = document.querySelector('meta[name="description"]');
             if (metaDesc) {
-                metaDesc.content = p.bio 
-                    ? `${p.username}: ${p.bio}` 
+                metaDesc.content = p.bio
+                    ? `${p.username}: ${p.bio}`
                     : `Check out ${p.username} on NobodysWatching.live`;
             }
+
+            // Self-referencing canonical, one per profile. Every streamer
+            // page shares identical static markup with the differentiating
+            // content injected here via JS, so without this Google was
+            // treating a chunk of profiles as duplicates of each other and
+            // only indexing one arbitrarily (search console: "duplicate
+            // without user-selected canonical"). Belt-and-braces alongside
+            // the canonical the profile-meta edge function sets for
+            // crawlers directly, since this covers any client that reads
+            // the DOM after JS runs instead.
+            let canonicalLink = document.querySelector('link[rel="canonical"]');
+            if (!canonicalLink) {
+                canonicalLink = document.createElement('link');
+                canonicalLink.rel = 'canonical';
+                document.head.appendChild(canonicalLink);
+            }
+            canonicalLink.href = `https://nobodyswatching.live/streamer.html?user=${encodeURIComponent(p.username)}`;
 
             // Avatar
             const avatar = document.getElementById('p-avatar');
