@@ -879,6 +879,8 @@
             align-items: center;
             gap: 0.35rem;
             flex-wrap: wrap;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .live-card-game {
@@ -1162,6 +1164,7 @@
             color: inherit;
             display: block;
             overflow: hidden;
+            min-width: 0; /* stop a long unbroken username from forcing this grid track wider than the rest */
         }
 
         .streamer-card:hover {
@@ -1176,6 +1179,11 @@
             align-items: center;
             gap: 1rem;
             margin-bottom: 1rem;
+        }
+
+        .streamer-card-info {
+            min-width: 0; /* flex items default to min-width:auto, which lets long text push the header wide */
+            flex: 1;
         }
 
         .streamer-avatar {
@@ -1215,6 +1223,8 @@
         .streamer-name {
             font-weight: 700;
             font-size: 1rem;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .streamer-badges {
@@ -3422,7 +3432,7 @@
                     <div onclick="window.location.href='${profileUrl}'" class="streamer-card ${isLive ? 'is-live' : ''}" style="cursor:pointer">
                         <div class="streamer-card-header">
                             <div class="streamer-avatar">${avatarHtml}</div>
-                            <div>
+                            <div class="streamer-card-info">
                                 <div class="streamer-name">${esc(p.username)}</div>
                                 <div class="streamer-badges">${renderBadges(p.badges)}</div>
                                 <div class="streamer-meta">${metaHtml}</div>
