@@ -73,24 +73,95 @@
 
         .nav-logo span { color: var(--accent-bright); }
 
-        .nav-links {
+        .nav-burger {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
             display: flex;
-            gap: 2rem;
-            list-style: none;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: border-color 0.2s, background 0.2s;
         }
 
-        .nav-links a {
+        .nav-burger:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+
+        .nav-burger span {
+            display: block;
+            width: 16px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: transform 0.25s ease, opacity 0.2s ease;
+        }
+
+        .nav-burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .nav-burger.is-open span:nth-child(2) { opacity: 0; }
+        .nav-burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        .nav-menu-panel {
+            position: fixed;
+            top: 70px;
+            right: 1rem;
+            left: 1rem;
+            max-width: 320px;
+            margin-left: auto;
+            z-index: 999;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+            overflow: hidden;
+            transform-origin: top right;
+            transform: scale(0.97) translateY(-6px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.18s ease, opacity 0.18s ease;
+        }
+
+        .nav-menu-panel.is-open {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .nav-menu-panel a {
+            display: block;
+            padding: 0.85rem 1.1rem;
             font-family: var(--font-mono);
-            font-size: 0.75rem;
+            font-size: 0.78rem;
             color: var(--text-secondary);
             text-decoration: none;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            transition: color 0.3s;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s;
         }
 
-        .nav-links a:hover { color: var(--text-primary); }
+        .nav-menu-panel a:last-child { border-bottom: none; }
+
+        .nav-menu-panel a:hover {
+            background: var(--bg-card-hover);
+            color: var(--accent-bright);
+        }
+
+        .nav-menu-divider {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 0.6rem 1.1rem 0.3rem;
+            background: var(--bg-secondary);
+        }
 
         .page-content {
             max-width: 680px;
@@ -250,7 +321,6 @@
 
         @media (max-width: 768px) {
             nav { padding: 1rem; }
-            .nav-links { display: none; }
             .page-content { padding: 6rem 1.25rem 2rem; }
             .page-title { font-size: 2rem; }
             .data-table { font-size: 0.8rem; }
@@ -261,11 +331,18 @@
 
     <nav>
         <a href="/" class="nav-logo">nobodys<span>watching</span>.live</a>
-        <ul class="nav-links">
-            <li><a href="/">Home</a></li>
-            <li><a href="/#directory">Directory</a></li>
-            <li><a href="/about.html">About</a></li>
-        </ul>
+        <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false" aria-controls="nav-menu-panel">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-menu-panel" id="nav-menu-panel">
+            <a href="/">Home</a>
+            <a href="/#live">Live Now</a>
+            <a href="/#directory">Directory</a>
+            <a href="/#how">How It Works</a>
+            <div class="nav-menu-divider">// the fine print</div>
+            <a href="/about.html">About</a>
+            <a href="/privacy.html">Privacy</a>
+        </div>
     </nav>
 
     <div class="page-content">
@@ -516,6 +593,49 @@
         </ul>
         <div class="footer-copy">© 2026 nobodyswatching.live. All rights reserved. No algorithms were harmed in the making of this site.</div>
     </footer>
+
+    <script>
+        // =============================================
+        // NAV MENU — hamburger toggle, shared markup/behaviour
+        // across index/about/privacy/profile/streamer
+        // =============================================
+        (function () {
+            const burger = document.getElementById('nav-burger');
+            const panel = document.getElementById('nav-menu-panel');
+            if (!burger || !panel) return;
+
+            function closeMenu() {
+                panel.classList.remove('is-open');
+                burger.classList.remove('is-open');
+                burger.setAttribute('aria-expanded', 'false');
+            }
+            function toggleMenu() {
+                const open = panel.classList.toggle('is-open');
+                burger.classList.toggle('is-open', open);
+                burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+            function positionMenuPanel() {
+                const navEl = document.querySelector('nav');
+                if (navEl) panel.style.top = `${navEl.getBoundingClientRect().bottom + 8}px`;
+            }
+
+            burger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                positionMenuPanel();
+                toggleMenu();
+            });
+            document.addEventListener('click', (e) => {
+                if (panel.classList.contains('is-open') && !panel.contains(e.target) && e.target !== burger) {
+                    closeMenu();
+                }
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeMenu();
+            });
+            window.addEventListener('resize', positionMenuPanel);
+            positionMenuPanel();
+        })();
+    </script>
 
 </body>
 </html>

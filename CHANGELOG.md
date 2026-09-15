@@ -3,6 +3,22 @@
 All notable changes to NobodysWatching.live are documented here.
 
 ---
+[2026-09-15] - UNIFIED NAV MENU
+
+### Added
+- Single hamburger menu, same component and same six links, on all five pages (`index`, `about`, `privacy`, `profile`, `streamer`) at every screen width — no more text-link nav that just disappeared under 768px with nothing replacing it, and no more pages with no way back to About or Privacy
+- Menu contents: Home, Live Now, Directory, How It Works, then a `// the fine print` divider, then About and Privacy. Bluesky and Discord deliberately stay footer-only, not folded in
+- Sign In / the signed-in account dropdown stays exactly where it already was, outside the new menu, on the two pages that have it (`index`, `profile`) — untouched by this change
+
+### Fixed
+- `profile.html` and `streamer.html` previously had no way to reach About or Privacy at all without going back to the homepage first
+- Every page's mobile nav (below 768px) was `.nav-links { display: none; }` with no fallback — the whole top nav just vanished on a phone. Gone now; the hamburger is there at every width instead
+
+### Notes
+- Panel styling deliberately reuses the signed-in account dropdown's existing look (card, border, hover states) rather than introducing a second visual pattern
+- Prototyped first as an interactive mockup before touching the live pages, per the usual "talk it through before writing code" approach for anything UX-shaped
+
+---
 [2026-09-15] - SEO CLEANUP: BROKEN PLATFORM LINKS + DUPLICATE PROFILE INDEXING
 
 ### Fixed
